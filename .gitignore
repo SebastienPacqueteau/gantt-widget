@@ -1,0 +1,4 @@
+# liste des  fichiers à ignorer
+
+## les fichiers systèmes
+.DS_Store
