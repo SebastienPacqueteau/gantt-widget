@@ -23,7 +23,8 @@ let config = new class {
   async grist(){
     this._listeTables = await grist.docApi.listTables();
     this.tablePrincipale = await grist.getSelectedTableId();
-    this[this.tablePrincipale] = await grist.docApi.fetchTable(this.tablePrincipale);
+    //this[this.tablePrincipale] = await grist.docApi.fetchTable(this.tablePrincipale);
+    await this.getTable(this.tablePrincipale);
     //les options colonnes gauches et droites
     this._colonnesG = await grist.getOption("colonnesG");
     this._colonnesD = await grist.getOption("colonnesD");
@@ -34,7 +35,7 @@ let config = new class {
 
   async prechargementTables(colonnes){
     for await (const obj of colonnes) {
-      this[obj.table] = await grist.docApi.fetchTable(obj.table);
+      await this.getTable(obj.table);
     }
   }
 
@@ -69,21 +70,26 @@ let config = new class {
   get colonnesG(){ return this._colonnesG; }
   get colonnesD(){ return this._colonnesD; }
 
-  async getTable(nomTable){
+  async getTable(nomTable, enLigne){
     if(!this[nomTable]){
-      let tmp = await grist.docApi.fetchTable(nomTable);
-      return tmp;
+      this[nomTable] = await grist.docApi.fetchTable(nomTable);
     }
-    return this[nomTable];
+    if(enLigne){
+        const colonnes = Object.keys(this[nomTable]);
+        return this[nomTable][colonnes[0]].map((_, i) => {
+          const objet = {};
+          colonnes.forEach(colonne => {
+            objet[colonne] = this[nomTable][colonne][i];
+          });
+          return objet;
+        });
+    }
+    else {
+      return this[nomTable];
+    }
   }
 
-  async getColonnes(nomTable){
-    if(!this[nomTable]){
-      let tmp = await grist.docApi.fetchTable(nomTable);
-      return Object.keys(tmp);
-    }
-    return Object.keys(this[nomTable]);
-  }
+  async getColonnes(nomTable){ return Object.keys(await this.getTable(nomTable)); }
 
   colOption(idTableau){
     const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : null);
@@ -98,7 +104,7 @@ let config = new class {
 
   ajouteColOption(idTableau, objLigne){
       const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : null);
-      this[colOption].push(objLigne);
+      if (objLigne.table){ this[colOption].push(objLigne);}
 
       this[colOption].sort((a,b) => a.id - b.id);
       this.sauvegarde(idTableau);
@@ -125,8 +131,10 @@ let config = new class {
        const objLigne = vuePC.valeursLigneTableau(id_tableau, "");
        objLigne["id"] = this[colOption].length > 0 ? Math.max(...this[colOption].map(obj => obj.id)) + 1 : 0;
 
-       vuePC.ajouterLigneAuTableau(id_tableau, objLigne);
-       this.ajouteColOption(id_tableau, objLigne);
+       if (objLigne.table){
+         vuePC.ajouterLigneAuTableau(id_tableau, objLigne);
+         this.ajouteColOption(id_tableau, objLigne);
+       }
      } catch (e) {
        console.log({ name: e.name, message: e.message });
      }
@@ -147,7 +155,7 @@ let config = new class {
    */
 
    async event(balise){
-    console.log(this, balise);
+    //console.log(this, balise);
     switch (balise.dataset.action) {
       case "Ajouter":
         this.#ajouterUneColonne(balise);

@@ -87,7 +87,7 @@ function creerBaliseSelect(typeSelect, options, textDefaut, valeurSelectionnee){
   baliseSelect.dataset.type = typeSelect;
   baliseSelect.dataset.action = "changement";
   let nouvelleOption = document.createElement("option");
-  nouvelleOption.value = 0;
+  nouvelleOption.value = "";
   nouvelleOption.disabled = true;
   nouvelleOption.text = textDefaut;
   baliseSelect.add(nouvelleOption);
