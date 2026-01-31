@@ -2,7 +2,9 @@
 // ====== Module Panneau configuration ======
 // ==========================================
 
-class Config{
+import * as vuePC from './affichagePanneauConfiguration.js';
+
+let config = new class {
   constructor(){
     this._colonnesNecessaires = [
       {
@@ -19,179 +21,188 @@ class Config{
   }
 
   async grist(){
-    this.listeTables = await grist.docApi.listTables();
-
+    this._listeTables = await grist.docApi.listTables();
+    this.tablePrincipale = await grist.getSelectedTableId();
+    this[this.tablePrincipale] = await grist.docApi.fetchTable(this.tablePrincipale);
     //les options colonnes gauches et droites
     this._colonnesG = await grist.getOption("colonnesG");
     this._colonnesD = await grist.getOption("colonnesD");
-
-    this.completerTableau("optionColG", this._colonnesG);
-    this.completerTableau("optionColD", this._colonnesD);
+    await this.prechargementTables(this.colonnesG);
+    await this.prechargementTables(this.colonnesD);
+    this.ajouterOptionsPC();
   }
 
-  async sauvegarde(){
-    await grist.setOption("colonnesG", this._colonnesG);
-    await grist.setOption("colonnesD", this._colonnesD);
+  async prechargementTables(colonnes){
+    for await (const obj of colonnes) {
+      this[obj.table] = await grist.docApi.fetchTable(obj.table);
+    }
   }
 
+  ajouterOptionsPC(){
+    if(!this.optionsPCajoutees){
+      vuePC.completerTableau("optionColG", this.colonnesG);
+      vuePC.completerTableau("optionColD", this.colonnesD);
+    }
+  }
+
+  async sauvegarde(idTableau){
+    if(idTableau === "optionColG"){
+      await grist.setOption("colonnesG", this.colonnesG);
+    }
+    else if (idTableau === "optionColD") {
+    await grist.setOption("colonnesD", this.colonnesD);
+    }
+    else{
+      await grist.setOption("colonnesG", this.colonnesG);
+      await grist.setOption("colonnesD", this.colonnesD);
+    }
+  }
 
   async options(){
     console.log(await grist.getOptions());
   }
 
-  get colonnesNecessaires(){
-    return this._colonnesNecessaires;
+  get listeTables(){ return this._listeTables; }
+  get nomTablePrincipale(){ return this.tablePrincipale; }
+  get colonnesTablePrincipale(){ return Object.keys(this[this.tablePrincipale]); }
+  get colonnesNecessaires(){ return this._colonnesNecessaires; }
+  get colonnesG(){ return this._colonnesG; }
+  get colonnesD(){ return this._colonnesD; }
+
+  async getTable(nomTable){
+    if(!this[nomTable]){
+      let tmp = await grist.docApi.fetchTable(nomTable);
+      return tmp;
+    }
+    return this[nomTable];
   }
 
-  get colonnesG(){
-    return this._colonnesG;
+  async getColonnes(nomTable){
+    if(!this[nomTable]){
+      let tmp = await grist.docApi.fetchTable(nomTable);
+      return Object.keys(tmp);
+    }
+    return Object.keys(this[nomTable]);
+  }
+
+  colOption(idTableau){
+    const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : null);
+    return this[colOption];
+  }
+
+  supprColOption(idTableau, id){
+      const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : null);
+      this[colOption] = this[colOption].filter(obj => obj.id != id);
+      this.sauvegarde(idTableau);
+  }
+
+  ajouteColOption(idTableau, objLigne){
+      const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : null);
+      this[colOption].push(objLigne);
+
+      this[colOption].sort((a,b) => a.id - b.id);
+      this.sauvegarde(idTableau);
+  }
+
+  remplacerColOption(idTableau, objLigne, id){
+    this.supprColOption(idTableau, id);
+    this.ajouteColOption(idTableau, objLigne);
   }
 
   optionsPanneau(){
-    console.log("CONFIG", this._colonnesG, this._colonnesD);
+    console.log("CONFIG", this.colonnesG, this.colonnesD);
   }
 
-  //id = {optionColD or optionColG} et lignes = tableau d'obj
-  completerTableau(id, lignes){
-    const baliseTbody = document.getElementById(id);
-    lignes.forEach((objLigne, i) => {
-      baliseTbody.appendChild(this.ajouterLigne(objLigne));
-    });
+  /*
+   * Actions
+   */
 
-    baliseTbody.appendChild(this.ajouterLigneVide());
+   #ajouterUneColonne(bouton){
+     try {
+       const id_tableau = bouton.dataset.tableau;
+       const colOption = (id_tableau === 'optionColG')? '_colonnesG' : ((id_tableau === 'optionColD')?'_colonnesD' : null);
+
+       const objLigne = vuePC.valeursLigneTableau(id_tableau, "");
+       objLigne["id"] = this[colOption].length > 0 ? Math.max(...this[colOption].map(obj => obj.id)) + 1 : 0;
+
+       vuePC.ajouterLigneAuTableau(id_tableau, objLigne);
+       this.ajouteColOption(id_tableau, objLigne);
+     } catch (e) {
+       console.log({ name: e.name, message: e.message });
+     }
+   }
+
+  #supprimerUneColonne(bouton){
+    try {
+      const id_tableau = bouton.dataset.tableau;
+      vuePC.retirerLigneDuTableau(id_tableau, bouton.dataset.idLigne);
+      this.supprColOption(id_tableau, bouton.dataset.idLigne);
+    } catch (e) {
+      console.log({ name: e.name, message: e.message });
+    }
   }
 
-  ajouterLigne(objLigne){
-    const baliseTr = document.createElement("tr");
+  /*
+   * Gestion des évènements
+   */
 
-    let baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    const titre = document.createElement("input");
-    titre.value = objLigne.titre;
-    baliseTd.appendChild(titre);
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    baliseTd.appendChild(this.ajouterSelect("listeTable", this.listeTables, "Selectionner la table"));
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    baliseTd.appendChild(this.ajouterSelect("listeTable", this.listeTables, "Selectionner"));
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    baliseTd.appendChild(this.ajouterSelect("listeTable", this.listeTables, "Selectionner"));
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    const largeur = document.createElement("input");
-    largeur.value = objLigne.largeur;
-    largeur.min = 10;
-    largeur.max = 250;
-    largeur.step = 10;
-    largeur.type = "number";
-    baliseTd.appendChild(largeur);
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    const bouton = document.createElement("button");
-    baliseTd.appendChild(bouton);
-    bouton.appendChild(this.#iconSupprimer());
-    bouton.id = objLigne.titre;
-
-    return baliseTr;
+   async event(balise){
+    console.log(this, balise);
+    switch (balise.dataset.action) {
+      case "Ajouter":
+        this.#ajouterUneColonne(balise);
+        break;
+      case "Supprimer":
+        this.#supprimerUneColonne(balise);
+        break;
+      case "changement":
+        await this.#modificationOption(balise);
+        break
+      default:
+    }
   }
 
-  ajouterLigneVide(){
-    const baliseTr = document.createElement("tr");
-
-    let baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    const titre = document.createElement("input");
-    baliseTd.appendChild(titre);
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    baliseTd.appendChild(this.ajouterSelect("listeTable", this.listeTables, "Selectionner la table"));
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    baliseTd.appendChild(this.ajouterSelect("listeTable", this.listeTables, "Selectionner"));
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    baliseTd.appendChild(this.ajouterSelect("listeTable", this.listeTables, "Selectionner"));
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    const largeur = document.createElement("input");
-    largeur.min = 10;
-    largeur.max = 250;
-    largeur.step = 10;
-    largeur.type = "number";
-    baliseTd.appendChild(largeur);
-
-    baliseTd = document.createElement("td");
-    baliseTr.appendChild(baliseTd);
-    const bouton = document.createElement("button");
-    baliseTd.appendChild(bouton);
-    bouton.appendChild(this.#iconAjouter());
-
-    return baliseTr;
+  async #modificationOption(balise){
+    if (balise.dataset.type === 'listeTables'){
+      this.#modificationListeTables(balise);
+    }
+    else if (balise.dataset.type === 'listeColonnes' ||
+             balise.dataset.type === 'colonneRef' ||
+             balise.dataset.type === 'titre' ||
+             balise.dataset.type === 'largeur'){
+      this.#modificationValeurOption(balise);
+    }
   }
 
-  ajouterSelect(id, options, textDefaut){
-    const baliseSelect = document.createElement("select");
-    baliseSelect.id = id;
-    let nouvelleOption = document.createElement("option");
-    nouvelleOption.value = 0;
-    nouvelleOption.disabled = true;
-    nouvelleOption.text = textDefaut;
-    baliseSelect.add(nouvelleOption);
-    baliseSelect.selectedIndex = 0;
-
-    options.forEach((option, i) => {
-  		nouvelleOption = document.createElement("option");
-  		nouvelleOption.value = option;
-  		nouvelleOption.text = option;
-  		baliseSelect.add(nouvelleOption);
-    });
-    return baliseSelect;
+  async #modificationListeTables(balise){
+    const ligneTableau = balise.parentNode.parentNode;
+    const numLigne = ligneTableau.dataset.numLigne;
+    const idTableau = ligneTableau.parentNode.id;
+    if(balise.value !== this.nomTablePrincipale){
+      vuePC.ajouterSelectColonne(idTableau, numLigne, "colonneRef", config.colonnesTablePrincipale);
+    }
+    else{
+      vuePC.retirerSelectColonne(idTableau, numLigne, "colonneRef");
+    }
+    this.#sauvegardeValeursOption(idTableau, numLigne);
+    vuePC.retirerSelectColonne(idTableau, numLigne, "listeColonnes");
+    vuePC.ajouterSelectColonne(idTableau, numLigne, "listeColonnes", await this.getColonnes(balise.value));
   }
 
-
-  #iconAjouter(){
-    const svgIcon= document.createElementNS("http://www.w3.org/2000/svg",'svg');
-    //svgIcon.setAttribute("class", "icon-arrow-down");
-    svgIcon.setAttribute("width", "16");
-    svgIcon.setAttribute("height", "16");
-    svgIcon.setAttribute("fill", "green");
-    svgIcon.setAttribute("viewBox", "0 0 16 16");
-    svgIcon.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-
-    const pathIcon = document.createElementNS("http://www.w3.org/2000/svg",'path');
-    svgIcon.appendChild(pathIcon);
-    pathIcon.setAttribute("d","M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z");
-
-    return svgIcon;
+  #modificationValeurOption(balise){
+    const ligneTableau = balise.parentNode.parentNode;
+    const numLigne = ligneTableau.dataset.numLigne;
+    const idTableau = ligneTableau.parentNode.id;
+    this.#sauvegardeValeursOption(idTableau, numLigne);
   }
 
-  #iconSupprimer(){
-    const svgIcon= document.createElementNS("http://www.w3.org/2000/svg",'svg');
-    //svgIcon.setAttribute("class", "icon-arrow-down");
-    svgIcon.setAttribute("width", "16");
-    svgIcon.setAttribute("height", "16");
-    svgIcon.setAttribute("fill", "red");
-    svgIcon.setAttribute("viewBox", "0 0 16 16");
-    svgIcon.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-
-    const pathIcon = document.createElementNS("http://www.w3.org/2000/svg",'path');
-    svgIcon.appendChild(pathIcon);
-    pathIcon.setAttribute("d","M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM4.5 7.5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z");
-
-    return svgIcon;
+  #sauvegardeValeursOption(idTableau, numLigne){
+    if(numLigne){
+      const objLigne = vuePC.valeursLigneTableau(idTableau, numLigne);
+      //console.log(objLigne);
+      this.remplacerColOption(idTableau, objLigne, numLigne);
+    }
   }
-
 }
 
-export { Config };
+export { config };

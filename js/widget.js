@@ -3,7 +3,7 @@
 // ===============================
 
 import { Gantt } from './gantt.js';
-import { Config } from './config.js';
+import { config } from './config.js';
 
 
 //Gantt
@@ -11,7 +11,7 @@ const titreGantt = new Gantt('titreGantt');
 const gantt = new Gantt('gantt');
 
 //panneau de configuration
-const config = new Config();
+//const config = new Config();
 
 grist.ready({
   onEditOptions() {

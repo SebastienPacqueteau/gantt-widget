@@ -180,7 +180,7 @@ section {
    ========================================================================== */
 
 #panneauConfig {
-  width: 650px;
+  width: 80vw;
   background: var(--color-panneau-config);
   border-left: 1px solid var(--color-bordure-panneau-config);
   height: 100vh;
