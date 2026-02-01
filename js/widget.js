@@ -4,14 +4,11 @@
 
 import { Gantt } from './gantt.js';
 import { config } from './config.js';
+import { projets } from './projet.js';
 
-
-//Gantt
+//Création du Gantt
 const titreGantt = new Gantt('titreGantt');
 const gantt = new Gantt('gantt');
-
-//panneau de configuration
-//const config = new Config();
 
 grist.ready({
   onEditOptions() {
@@ -25,21 +22,29 @@ grist.ready({
 (async function start(){
   //configuration
   await config.grist();
+  await projets.ajouterLesProjets();
   //console.log(config);
 
+  titreGantt.init();
+  gantt.init();
+
   //Dessiner le Gantt
-  titreGantt.ajusterDimension();
-  gantt.height = 1500;
+  titreGantt.ajusterDimension(20);
+  //gantt.height = 1500;
   gantt.ajusterDimension();
-  gantt.dessiner(Array.from(config.colonnesG, obj => obj.titre));
+  gantt.dessiner();
 })();
 
 function afficherLesResultats(){
   config.optionsPanneau();
 }
 
-function basculerPanneauConfiguration() {
+async function basculerPanneauConfiguration() {
   const panneauConfig = document.getElementById('panneauConfig');
+  if(!panneauConfig.classList.contains('collapsed')){
+    await projets.majListeProjets();
+    gantt.redessiner();
+  }
   panneauConfig.classList.toggle('collapsed');
 }
 

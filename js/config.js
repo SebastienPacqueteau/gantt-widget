@@ -2,7 +2,7 @@
 // ====== Module Panneau configuration ======
 // ==========================================
 
-import * as vuePC from './affichagePanneauConfiguration.js';
+import * as vuePC from './vuePanneauConfiguration.js';
 
 let config = new class {
   constructor(){
@@ -69,6 +69,19 @@ let config = new class {
   get colonnesNecessaires(){ return this._colonnesNecessaires; }
   get colonnesG(){ return this._colonnesG; }
   get colonnesD(){ return this._colonnesD; }
+  get nbColonnesG(){ return this.colonnesG.length; }
+  get nbColonnesD(){ return this.colonnesD.length; }
+
+  get largeurColonnesG(){
+    let largeur = 0;
+    this.colonnesG.forEach((col) => { largeur += Number(col.largeur); });
+    return largeur;
+  }
+  get largeurColonnesD(){
+    let largeur = 0;
+    this.colonnesD.forEach((col) => { largeur += Number(col.largeur); });
+    return largeur;
+  }
 
   async getTable(nomTable, enLigne){
     if(!this[nomTable]){
