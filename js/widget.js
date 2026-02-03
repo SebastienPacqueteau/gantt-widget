@@ -15,7 +15,7 @@ grist.ready({
     basculerPanneauConfiguration();
   },
   columns: config.colonnesNecessaires,
-  requiredAccess: 'read table',
+  requiredAccess: 'full',
   allowSelectBy: false
 });
 
@@ -29,14 +29,12 @@ grist.ready({
   gantt.init();
 
   //Dessiner le Gantt
-  titreGantt.ajusterDimension(20);
-  //gantt.height = 1500;
-  gantt.ajusterDimension();
+  titreGantt.dessinerBarreTitre();
   gantt.dessiner();
 })();
 
-function afficherLesResultats(){
-  config.optionsPanneau();
+async function afficherLesResultats(){
+  await config.optionsPanneau();
 }
 
 async function basculerPanneauConfiguration() {
@@ -44,6 +42,7 @@ async function basculerPanneauConfiguration() {
   if(!panneauConfig.classList.contains('collapsed')){
     await projets.majListeProjets();
     gantt.redessiner();
+    titreGantt.redessinerTitre();
   }
   panneauConfig.classList.toggle('collapsed');
 }

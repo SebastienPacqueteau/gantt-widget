@@ -13,31 +13,50 @@ async function completerTableau(idTableau, lignes){
   contenuTableau.appendChild(creerLigneAuTableau(idTableau));
 }
 
-function creerLigneAuTableau(idTableau, objLigne, listeColonnes){
-  const baliseTr = document.createElement("tr");
-  baliseTr.dataset.numLigne = (objLigne)? objLigne.id : "";
+async function completerTableauGantt(lignes){
+  const contenuTableau = document.getElementById('optionGantt');
+  for await (const objLigne of lignes) {
+    contenuTableau.appendChild(creerLigneAuTableau('optionGantt', objLigne, await config.getColonnes(objLigne.table)));
+  }
+}
 
-  baliseTr.appendChild(creerChampSaisie("titre", (objLigne)? objLigne.titre : "", "texte"));
-  baliseTr.appendChild(creerColSelect("listeTables", config.listeTables, "Selectionner la table", (objLigne) ? objLigne.table : null));
-  baliseTr.appendChild(creerColSelect("listeColonnes", (listeColonnes)? listeColonnes :[], "Selectionner", (objLigne) ? objLigne.colonne : null));
+function creerLigneAuTableau(idTableau, objLigne, listeColonnes){
+  const ligneTableau = document.createElement("tr");
+  ligneTableau.dataset.numLigne = (objLigne)? objLigne.id : "";
+  if(false){}
+  //if(idTableau === 'optionGantt'){ligneTableau.appendChild(creerTitreLigne("titre", objLigne.titre));}
+  else {ligneTableau.appendChild(creerChampSaisie("titre", (objLigne)? objLigne.titre : "", "texte"));}
+  ligneTableau.appendChild(creerColSelect("listeTables", config.listeTables, "Selectionner la table", (objLigne) ? objLigne.table : null));
+  ligneTableau.appendChild(creerColSelect("listeColonnes", (listeColonnes)? listeColonnes :[], "Selectionner", (objLigne) ? objLigne.colonne : null));
   if (objLigne && objLigne.table !== config.nomTablePrincipale){
-    baliseTr.appendChild(creerColSelect("colonneRef", config.colonnesTablePrincipale, "Selectionner", objLigne.col_ref));
+    ligneTableau.appendChild(creerColSelect("colonneRef", config.colonnesTablePrincipale, "Selectionner", objLigne.col_ref));
   }
   else {
     const baliseTd = document.createElement("td")
     baliseTd.dataset.nomColonne = "colonneRef";
-    baliseTr.appendChild(baliseTd);
+    ligneTableau.appendChild(baliseTd);
+  }
+  if(idTableau != 'optionGantt'){
+    ligneTableau.appendChild(creerChampSaisie("largeur", (objLigne)? objLigne.largeur : 0, 'nombre'));
+    ligneTableau.appendChild(creerBouton("bouton", (objLigne)? "Supprimer":"Ajouter", idTableau, (objLigne)? objLigne.id : "ajout"));
   }
 
-  baliseTr.appendChild(creerChampSaisie("largeur", (objLigne)? objLigne.largeur : 0, 'nombre'));
-  baliseTr.appendChild(creerBouton("largeur", (objLigne)? "Supprimer":"Ajouter", idTableau, (objLigne)? objLigne.id : "ajout"));
+  return ligneTableau;
+}
 
-  return baliseTr;
+function creerTitreLigne(nomColonne, titre){
+  const colonneTableau = document.createElement("td");
+  colonneTableau.dataset.nomColonne = nomColonne;
+  const pTitre = document.createElement("p");
+  pTitre.innerHTML = titre;
+
+  colonneTableau.appendChild(pTitre);
+  return colonneTableau;
 }
 
 function creerChampSaisie(nom, valeur, type) {
-  const ligneTableau = document.createElement("td");
-  ligneTableau.dataset.nomColonne = nom;
+  const colonneTableau = document.createElement("td");
+  colonneTableau.dataset.nomColonne = nom;
   const champSaisie = document.createElement("input");
   champSaisie.addEventListener("change", ()=>config.event(champSaisie));
   champSaisie.value = valeur;
@@ -45,17 +64,17 @@ function creerChampSaisie(nom, valeur, type) {
   champSaisie.dataset.action = "changement";
   if (type === 'nombre'){
     champSaisie.min = 10;
-    champSaisie.max = 250;
+    champSaisie.max = 300;
     champSaisie.step = 10;
     champSaisie.type = "number";
   }
-  ligneTableau.appendChild(champSaisie);
-  return ligneTableau;
+  colonneTableau.appendChild(champSaisie);
+  return colonneTableau;
 }
 
 function creerBouton(nom, type, idTableau, idLigne) {
-  const ligneTableau = document.createElement("td");
-  ligneTableau.dataset.nomColonne = nom;
+  const colonneTableau = document.createElement("td");
+  colonneTableau.dataset.nomColonne = nom;
   const bouton = document.createElement("button");
   if (type === "Supprimer"){
     bouton.appendChild(iconSupprimer());
@@ -69,8 +88,8 @@ function creerBouton(nom, type, idTableau, idLigne) {
   bouton.dataset.tableau = idTableau;
   bouton.dataset.idLigne = idLigne;
 
-  ligneTableau.appendChild(bouton);
-  return ligneTableau;
+  colonneTableau.appendChild(bouton);
+  return colonneTableau;
 }
 
 function creerColSelect(typeCol, options, textDefaut, valeurSelectionnee){
@@ -164,15 +183,16 @@ function ajouterSelectColonne(idTableau, numLigne, nomColonne, listeColonnes){
 function valeursLigneTableau(idTableau, numLigne){
   const contenuTableau = document.getElementById(idTableau);
   const ligneTableau = contenuTableau.querySelector(`tr[data-num-ligne="${numLigne}"]`);
-  const colTire = ligneTableau.children[0].children[0].value;
+  const colTitre = ligneTableau.children[0].children[0].value;
   const colTable = ligneTableau.children[1].children[0].value;
   const colColonne = ligneTableau.children[2].children[0].value;
   const colColonneRef = (colTable !== config.nomTablePrincipale && ligneTableau.children[3].children.length) ? ligneTableau.children[3].children[0].value : "";
-  const colLargeur = ligneTableau.children[4].children[0].value;
+  const colLargeur = (idTableau != 'optionGantt') ? ligneTableau.children[4].children[0].value : "";
   const id = numLigne;
 
-  return { titre: colTire, table: colTable, colonne: colColonne, largeur: colLargeur, col_ref: colColonneRef, id: id };
+  return { titre: colTitre, table: colTable, colonne: colColonne, largeur: colLargeur, col_ref: colColonneRef, id: id };
 }
+
 
 function ajouterLigneAuTableau(idTableau, objLigne) {
   const contenuTableau = document.getElementById(idTableau);
@@ -190,6 +210,7 @@ function retirerLigneDuTableau(idTableau, numLigne) {
 
 export {
   completerTableau,
+  completerTableauGantt,
   ajouterLigneAuTableau,
   retirerLigneDuTableau,
   creerBaliseSelect,
