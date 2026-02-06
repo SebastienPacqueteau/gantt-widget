@@ -32,6 +32,9 @@ let config = new class {
     await this.prechargementTables(this.colonnesD);
     this.ajouterOptionsPC();
   }
+  /**
+   * @description méthode qui récupère les options sauvergardées dans grist et les ajoute au singleton config
+   */
   async getOptions(){
     await this.getOption("optionGantt");
     await this.getOption("colonnesG");
@@ -41,13 +44,14 @@ let config = new class {
   async getOption(nomOption){
     let option = await grist.getOption(nomOption);
     if (!option){
-      console.log("getOption : ", option, nomOption);
+      //console.log("getOption : ", option, nomOption);
       if( nomOption ==='optionGantt'){
         option = [  
           {"titre": "Date début : ","table": "","colonne": "","col_ref": "","id": 0},
           {"titre": "Date fin : ","table": "","colonne": "","col_ref": "","id": 1},
           {"titre": "Contenu sur la barre : ","table": "","colonne": "","col_ref": "","id": 2},
-          {"titre": "Couleur de la barre : ","table": "","colonne": "","col_ref": "","id": 3}
+          {"titre": "Couleur de la barre : ","table": "","colonne": "","col_ref": "","id": 3},
+          {"titre": "Selection du filtre : ","table": "","colonne": "","col_ref": "","id": 4}
         ];
       }
       else{ 
@@ -59,8 +63,6 @@ let config = new class {
       // si besoins
     }
     this[nomOption] = option;
-    //console.log(this);
-    
   }
 
   async prechargementTables(colonnes){
@@ -69,6 +71,11 @@ let config = new class {
     }
   }
 
+  /**
+   * @description appel des fonctions du module vuePanneauConfiguration pour : 
+   * - ajouter les informations de configuration du widget 
+   * - permettre leur modification
+   */
   ajouterOptionsPC(){
     if(!this.optionsPCajoutees){
       vuePC.completerTableau("optionColG", this.colonnesG);
@@ -76,7 +83,10 @@ let config = new class {
       vuePC.completerTableauGantt(this.optionGantt);
     }
   }
-
+  /**
+   * @description sauvegarde des options du widget
+   * @param {optional} idTableau ID de balise html <tbody> des options à sauvegarder
+   */
   async sauvegarde(idTableau){
     if(idTableau === "optionColG"){
       await grist.setOption("colonnesG", this.colonnesG);
@@ -93,15 +103,22 @@ let config = new class {
       await grist.setOption("optionGantt", this.optionGantt);
     }
   }
-
-  async options(){
-    console.log(await grist.getOptions());
-  }
-
+  /** 
+   * @returns {String[]} liste des tables du document grist
+   */
   get listeTables(){ return this._listeTables; }
+  
+  /** 
+   * @returns {String} nom de la table grist sélectionné pour ce widget
+   */
   get nomTablePrincipale(){ return this.tablePrincipale; }
+
+  /**
+   * @returns {string[]} liste des colonnes de la table principale dont les colonnes "grist helperDisplay"
+   */
   get colonnesTablePrincipale(){ return this[`${this.tablePrincipale}_col`]; }
   get colonnesNecessaires(){ return this._colonnesNecessaires; }
+
   get colonnesG(){ return this._colonnesG; }
   set colonnesG(nouvellesColonnes){ this._colonnesG = nouvellesColonnes; }
   get colonnesD(){ return this._colonnesD; }
@@ -122,6 +139,10 @@ let config = new class {
     return largeur;
   }
 
+  /**
+   * @param {string} nomTable nom de la table Grist
+   * @returns {object[]} revoie un tableau d'objet représentant chaque ligne de la table Grist
+   */
   async getTable(nomTable){
     const nomAttributCol = nomTable + "_col";
     if(!this[nomTable]){
@@ -138,7 +159,10 @@ let config = new class {
     }
     return this[nomTable];
   }
-  
+  /**
+   * @param {string} nomTable nom de la table Grist
+   * @returns {string[]} renvoie la liste des colonnes de la table Grist
+   */
   async getColonnes(nomTable){ 
     const nomAttributCol =  nomTable + "_col";
     if (!this[nomAttributCol]){
@@ -147,17 +171,29 @@ let config = new class {
     return this[nomAttributCol];
   }
 
+  /**
+   * @param {String} idTableau ID de balise html <tbody> 
+   * @returns {object[]} renvoie un tableau d'objets représentant chaque ligne du tableau 
+   */
   colOption(idTableau){
     const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : idTableau);
     return this[colOption];
   }
 
+  /**
+   * @param {String} idTableau ID de balise html <tbody> 
+   * @param {number} id numero de la ligne ou null si ligne d'ajout
+   */
   supprColOption(idTableau, id){
       const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : idTableau);
       this[colOption] = this[colOption].filter(obj => obj.id != id);
       this.sauvegarde(idTableau);
   }
 
+  /**
+   * @param {String} idTableau ID de balise html <tbody> 
+   * @param {object} objLigne objet représentant une ligne du tableau
+   */
   ajouteColOption(idTableau, objLigne){
       const colOption = (idTableau === 'optionColG')? '_colonnesG' : ((idTableau === 'optionColD')?'_colonnesD' : idTableau);
       if (objLigne.table){ this[colOption].push(objLigne);}
@@ -166,10 +202,17 @@ let config = new class {
       this.sauvegarde(idTableau);
   }
 
+  /**
+   * @param {String} idTableau ID de balise html <tbody> 
+   * @param {object} objLigne objet représentant une ligne du tableau
+   * @param {number} id numero de la ligne ou null si ligne d'ajout
+   */
   remplacerColOption(idTableau, objLigne, id){
     this.supprColOption(idTableau, id);
     this.ajouteColOption(idTableau, objLigne);
   }
+
+
 
   async optionsPanneau(){
     console.log("CONFIG", await grist.getOptions());
@@ -186,6 +229,10 @@ let config = new class {
    * Actions
    */
 
+  /**
+   * 
+   * @param {HTMLAnchorElement} bouton 
+   */
    #ajouterUneColonne(bouton){
      try {
        const id_tableau = bouton.dataset.tableau;
@@ -203,6 +250,9 @@ let config = new class {
      }
    }
 
+  /**
+   * @param {HTMLAnchorElement} bouton 
+   */
   #supprimerUneColonne(bouton){
     try {
       const id_tableau = bouton.dataset.tableau;
@@ -217,6 +267,10 @@ let config = new class {
    * Gestion des évènements
    */
 
+  /**
+   * @event
+   * @param {HTMLAnchorElement} balise: action sur cet élément 
+   */
    async event(balise){
     //console.log(this, balise);
     switch (balise.dataset.action) {
@@ -233,6 +287,9 @@ let config = new class {
     }
   }
 
+  /**
+   * @param {HTMLAnchorElement} balise 
+   */
   async #modificationOption(balise){
     const idTableau = balise.parentNode.parentNode.parentNode.id;
       if (balise.dataset.type === 'listeTables'){
@@ -247,6 +304,9 @@ let config = new class {
     //}
   }
 
+  /**
+   * @param {HTMLAnchorElement} balise 
+   */
   async #modificationListeTables(balise){
     const ligneTableau = balise.parentNode.parentNode;
     const numLigne = ligneTableau.dataset.numLigne;
@@ -262,6 +322,10 @@ let config = new class {
     vuePC.ajouterSelectColonne(idTableau, numLigne, "listeColonnes", await this.getColonnes(balise.value));
   }
 
+  /**
+   * 
+   * @param {HTMLAnchorElement} balise 
+   */
   #modificationValeurOption(balise){
     const ligneTableau = balise.parentNode.parentNode;
     const numLigne = ligneTableau.dataset.numLigne;
@@ -269,6 +333,11 @@ let config = new class {
     this.#sauvegardeValeursOption(idTableau, numLigne);
   }
 
+  /**
+   * 
+   * @param {String} idTableau 
+   * @param {number} numLigne 
+   */
   #sauvegardeValeursOption(idTableau, numLigne){
     //console.log(idTableau, numLigne);
     if(numLigne){
