@@ -3,6 +3,7 @@
 // ==========================================
 
 import * as vuePC from './vuePanneauConfiguration.js';
+import * as vueFW from './vueFiltreWidget.js';
 
 let config = new class {
   constructor(){
@@ -31,6 +32,8 @@ let config = new class {
     await this.prechargementTables(this.colonnesG);
     await this.prechargementTables(this.colonnesD);
     this.ajouterOptionsPC();
+
+    this.filtrerDonneesTablePrincipale();
   }
   /**
    * @description méthode qui récupère les options sauvergardées dans grist et les ajoute au singleton config
@@ -69,6 +72,11 @@ let config = new class {
     for await (const obj of colonnes) {
       await this.getTable(obj.table);
     }
+  }
+
+  filtrerDonneesTablePrincipale(){
+    console.log("table filtre : ", this.optionGantt[4]);
+    
   }
 
   /**
