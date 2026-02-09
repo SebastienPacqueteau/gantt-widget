@@ -33,7 +33,7 @@ let config = new class {
     await this.prechargementTables(this.colonnesD);
     this.ajouterOptionsPC();
 
-    this.filtrerDonneesTablePrincipale();
+    await this.filtrerDonneesTablePrincipale();
   }
   /**
    * @description méthode qui récupère les options sauvergardées dans grist et les ajoute au singleton config
@@ -74,8 +74,11 @@ let config = new class {
     }
   }
 
-  filtrerDonneesTablePrincipale(){
-    console.log("table filtre : ", this.optionGantt[4]);
+  async filtrerDonneesTablePrincipale(){
+    const tableOptionsFiltre = (this.optionGantt[4].table)? await this.getTable(this.optionGantt[4].table) : [];
+    const listeOptions = (this.optionGantt[4].colonne)? tableOptionsFiltre.map( obj => obj[this.optionGantt[4].colonne]) : [];
+    vueFW.ajouteMenuDeroulantFiltre(listeOptions);
+    //console.log("table filtre : ", this.optionGantt[4], listeOptions);
     
   }
 
@@ -291,8 +294,18 @@ let config = new class {
       case "changement":
         await this.#modificationOption(balise);
         break
+      case "filtre":
+        await this.#filtreDesProjets(balise);
+        break
       default:
     }
+  }
+  /**
+   * 
+   * @param {HTMLElement} balise qui a généré un évènement 
+   */
+  #filtreDesProjets(balise){
+    console.log(balise, balise.id, balise.value, this.optionGantt[4],this.optionGantt[4].col_ref, this[this.tablePrincipale]);
   }
 
   /**

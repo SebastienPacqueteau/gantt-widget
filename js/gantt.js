@@ -110,7 +110,6 @@ class Gantt{
     const ajustementHauteurBarre = (this.hauteurLigne - this.hautBarre)/2;
     
     if(projet.date_debut){
-    console.log(projet.titreBarre, projet.date_debut.toLocaleDateString("fr-FR"), projet.date_fin.toLocaleDateString("fr-FR"));
       ctx.save();
       ctx.rect(this.largeurColonnesG, hauteur-ajustementHauteurBarre, this.largeurGraphGantt, this.hauteurLigne * projet.nbLigne);
       ctx.clip();

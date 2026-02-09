@@ -12,9 +12,7 @@
     <header>
       <div class="filtres enLigne space-between">
         <div class="filtres enColonne">
-          <!-- <label for="statutProjets">Statut des Projets</label> -->
-          <select class="form-control form-select" id="statutProjets" required>
-            <option value="0" disabled selected hidden>Sélectionnez le statut des projets à afficher</option>
+          <select class="form-control form-select" id="filtreProjets" required>
           </select>
         </div>
         Sélection des projets entre :
@@ -45,11 +43,24 @@
         </button>
       </div> 
       <div class="panneauConfig-section separation">
+        <h3>affichage :</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Information</th>
+              <th>valeur</th>
+            </tr>
+          </thead>
+          <tbody id="affichage">
+          </tbody>
+        </table>
+      </div> 
+      <div class="panneauConfig-section separation">
         <h3>Information pour le Gantt</h3>
         <table>
           <thead>
             <tr>
-              <th>Titre</th>
+              <th>Information</th>
               <th>Table</th>
               <th>Colonne</th>
               <th>Colonne de référence</th>
