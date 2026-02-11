@@ -3,13 +3,15 @@
 // =======================================================
 
 import { config } from './config.js';
+import { redessiner } from './widget.js';
+
 /**
  * @description ajoute les options au filtre
  * @param {string[]} listeOptions liste d'options pour le menu déroulant
  */
 function ajouteMenuDeroulantFiltre(listeOptions){
   const baliseFiltre = document.getElementById('filtreProjets');
-  baliseFiltre.addEventListener("change", ()=>config.event(baliseFiltre));
+  baliseFiltre.addEventListener("change", ()=>redessiner());
   baliseFiltre.dataset.action = "filtre";
   let nouvelleOption = document.createElement("option");
   baliseFiltre.add(nouvelleOption);
@@ -18,6 +20,10 @@ function ajouteMenuDeroulantFiltre(listeOptions){
   baliseFiltre.selectedIndex = 0;
   nouvelleOption.disabled = true;
   ajouterOptions(baliseFiltre, listeOptions);
+  nouvelleOption = document.createElement("option");
+  baliseFiltre.add(nouvelleOption);
+  nouvelleOption.value = 0;
+  nouvelleOption.text = "Tous les projets";
 }
 
 /**

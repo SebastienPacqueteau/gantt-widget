@@ -23,9 +23,32 @@ class Gantt{
     this.largeurColonnesG = projets.largeurColonnesG + ((projets.nbColonnesG + 2) * this.margeColonne);
     this.largeurColonnesD = projets.largeurColonnesD + ((projets.nbColonnesD + 2) * this.margeColonne);
     this.largeurGraphGantt = this.width - this.largeurColonnesG - this.largeurColonnesD;
-    this.dateDebutAffichage = new Date().setMonth(new Date().getMonth()-2);
-    this.dateFinAffichage = new Date().setMonth(new Date().getMonth()+6);
+    this.dateDebutAffichage = (()=>{
+      const date = new Date(); 
+      date.setMonth(date.getMonth()-2);
+      date.setDate(1);
+      return date;
+    })();
+    this.dateFinAffichage = (()=>{
+      const date = new Date(); 
+      date.setMonth(date.getMonth()+6);
+      date.setDate(1);
+      return date;
+    })();
     this.ecartDate = this.dateFinAffichage - this.dateDebutAffichage; 
+    this.listeMoisAffiches = (()=>{
+      let listeMois = [];
+      const moisAffichee = -2;
+      for (let i = 0; i < this.nbMoisAffiches; i++) {
+        const date = new Date();
+        date.setMonth(date.getMonth() + moisAffichee + i);
+        date.setDate(1);
+        listeMois.push(date); 
+      }
+      return listeMois;
+    })(); 
+    console.log(this);
+    
   }
 
   get width(){ return this._width; }
@@ -33,7 +56,6 @@ class Gantt{
   set height(newHeight){ this._height = newHeight; }
 
   toString(){
-    //console.log(this, this.element);
     return `Canvas ${this.element.id} : ${this._width} x ${this._height}`;
   }
 
@@ -67,12 +89,13 @@ class Gantt{
     this.ligneTitres(projets.colonnesTitre);
 
     let hauteur = this.hauteurTitre + this.margeTitre;
-    //console.log(this.dateDebutAffichage, this.#convTimestampToPosition(this.dateDebutAffichage));
-    projets.liste.forEach((projet)=>{
+    this.#dessinerlignesTitres();
+    this.#dessinerLigneAjrd();
+    projets.liste.forEach((projet,i)=>{
       hauteur += this.ajouterLigneProjet(projet, hauteur);
+      if(i != projets.liste.length){
+      }
     });
-
-    //console.log("test largeurColonnesG:",this.largeurColonnesG, projets.largeurColonnesG, projets.nbColonnesG, this.margeColonne);
   }
 
   ajouterLigneProjet(projet, hauteur){
@@ -175,16 +198,43 @@ class Gantt{
     //TODO: ajouter la colonne de droite : colonnes.droite .... 
   }
 
+  #dessinerlignesTitres(){
+    this.listeMoisAffiches.forEach((date)=>{
+      this.#dessinerligneDate(date, 1, [5,5]);
+    });
+  }
+
+  #dessinerLigneAjrd(){
+    this.#dessinerligneDate(new Date(), 2, [5,10,15,10]);
+  }
+
+  /**
+   * 
+   * @param {Date} date mettre la date à tracer 
+   * @param {Number} epaisseurTrait 
+   * @param {Number[]} schemaPointillees - largeur trait plein, espacement, .... 
+   */
+  #dessinerligneDate(date, epaisseurTrait, schemaPointillees){
+    const ctx = this.element.getContext('2d');
+    const positionX = this.largeurColonnesG + this.#convTimestampToPosition(date);
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = epaisseurTrait;
+    ctx.beginPath();
+    ctx.setLineDash(schemaPointillees);
+    ctx.moveTo(positionX,  this.hauteurTitre + this.margeTitre);
+    ctx.lineTo(positionX, this.element.height);
+    ctx.stroke();
+  }
+
   #colonneDate(){
     const colonneDate = [];
-    const moisAffichee = -2;
-    for (let i = 0; i < this.nbMoisAffiches; i++) {
-      const date = new Date();
-      date.setMonth(date.getMonth() + moisAffichee + i);
+    //console.log(this.listeMoisAffiches);
+    
+    this.listeMoisAffiches.forEach((date)=>{
       const mois = date.toLocaleDateString("fr-FR", {month: "long"});
       const annee = date.toLocaleDateString("fr-FR", {year: "numeric"});
       colonneDate.push(`${this.#convMois(mois)} ${annee.slice(-2)}`); 
-    }
+    });
     return colonneDate;
   }
 

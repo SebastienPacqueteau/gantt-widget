@@ -14,8 +14,24 @@ let projets = new class {
   }
 
   get length(){ return this._liste.length; }
-  get liste(){ return this._liste; }
-  get nombreLignes(){ return this.nbLigne; }
+  get liste(){ 
+    const baliseFiltre = document.getElementById('filtreProjets');
+    if(baliseFiltre.value && baliseFiltre.value != 0){
+      return this._liste.filter((projet)=>projet.infoFiltre === baliseFiltre.value);
+    }
+    else{
+      return this._liste; 
+    }
+  }
+  get nombreLignes(){ 
+    const baliseFiltre = document.getElementById('filtreProjets');
+    if(baliseFiltre.value && baliseFiltre.value != 0){
+      return this.liste.length;
+    }
+    else{
+      return this.nbLigne; 
+    }
+  }
 
 
   get nbColonnesG(){ return config.nbColonnesG; }
@@ -31,6 +47,7 @@ let projets = new class {
   async ajouterLesProjets(){
     const tableCouleurBarre = await config.getTable(config.optionGantt[3].table);
     const tableTitreBarre = await config.getTable(config.optionGantt[2].table);
+    const tableInfoFiltre = await config.getTable(config.optionGantt[4].table);
     
     for await (const objLigne of await config.getTable(config.nomTablePrincipale)) {
       const nouvProjet = new Projet();
@@ -38,6 +55,11 @@ let projets = new class {
       config.colonnesG.forEach((objColonne)=>{
         //si l'info est dans la table principale
         nouvProjet.ajouterInfoColonnesG(objLigne[objColonne.colonne], Number(objColonne.largeur));
+      });
+
+      config.colonnesD.forEach((objColonne)=>{
+        //si l'info est dans la table principale
+        nouvProjet.ajouterInfoColonnesD(objLigne[objColonne.colonne], Number(objColonne.largeur));
       });
       
       this.ajouterProjet(nouvProjet);
@@ -49,6 +71,9 @@ let projets = new class {
       nouvProjet.date_fin = objLigne[objColonneDateFin.colonne];
       nouvProjet.ajouterCouleurBarre(objLigne, tableCouleurBarre);
       nouvProjet.ajouterTitreBarre(objLigne, tableTitreBarre);
+      nouvProjet.ajouterinfoFiltre(objLigne, tableInfoFiltre);
+
+      console.log(nouvProjet);
     }
     //console.log(this);
   }
@@ -64,6 +89,7 @@ class Projet {
   constructor() {
     this.colonnesG = [];
     this.colonnesD = [];
+    this.infoFiltre = "";
     this._dateDebut = 0;
     this._dateFin = 0;
     this._couleurBarre;
@@ -72,6 +98,20 @@ class Projet {
   }
 
   ajouterInfoColonnesG(contenu, largeur){
+    this.colonnesG.push({
+      contenu: this.#ajouterInfoColonnes(contenu),
+      largeur: largeur
+    });
+  }
+  
+  ajouterInfoColonnesD(contenu, largeur){
+    this.colonnesD.push({
+      contenu: this.#ajouterInfoColonnes(contenu),
+      largeur: largeur
+    });
+  }
+
+  #ajouterInfoColonnes(contenu){
     let nContenu;
     if (Array.isArray(contenu) && contenu.length){
       if(contenu[0] === "L"){
@@ -79,12 +119,10 @@ class Projet {
       }
       nContenu = [...new Set(nContenu)];
     }
-    else { nContenu = [contenu];}
+    else if(!contenu){nContenu = [""]}
+    else{ nContenu = [contenu];}
     if (nContenu.length > this.nbLigne){ this.nbLigne = nContenu.length ; }
-    this.colonnesG.push({
-      contenu: nContenu,
-      largeur: largeur
-    });
+    return nContenu;
   }
 
   ajouterCouleurBarre(objLigne, tableCouleurBarre){
@@ -106,6 +144,17 @@ class Projet {
       const idColRefTitre = objLigne[config.optionGantt[2].col_ref]
       const ligneTitre = tableTitreBarre.find(ligne => ligne.id === idColRefTitre);
       this.titreBarre = (ligneTitre)? ligneTitre[config.optionGantt[2].colonne] : null;
+    }
+  }
+
+  ajouterinfoFiltre(objLigne, tableInfoFiltre){
+    if (config.optionGantt[4].table === config.nomTablePrincipale){
+      this.infoFiltre = objLigne[config.optionGantt[4].colonne];
+    }
+    else{
+      const idColRefTitre = objLigne[config.optionGantt[4].col_ref]
+      const ligneInfoFiltre = tableInfoFiltre.find(ligne => ligne.id === idColRefTitre);
+      this.infoFiltre = (ligneInfoFiltre)? ligneInfoFiltre[config.optionGantt[4].colonne] : null;
     }
   }
 

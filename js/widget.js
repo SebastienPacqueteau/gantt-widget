@@ -41,13 +41,19 @@ async function basculerPanneauConfiguration() {
   const panneauConfig = document.getElementById('panneauConfig');
   if(!panneauConfig.classList.contains('collapsed')){
     await projets.majListeProjets();
-    gantt.redessiner();
-    titreGantt.redessinerTitre();
+    redessiner();
   }
   panneauConfig.classList.toggle('collapsed');
+}
+
+function redessiner() {
+  gantt.redessiner();
+  titreGantt.redessinerTitre();
 }
 
 // liste des évènements
 document.getElementById('afficherLesResultats').addEventListener("click", afficherLesResultats);
 document.getElementById('ouvrirConfig').addEventListener("click", basculerPanneauConfiguration);
 document.getElementById('fermerConfig').addEventListener("click", basculerPanneauConfiguration);
+
+export {redessiner};

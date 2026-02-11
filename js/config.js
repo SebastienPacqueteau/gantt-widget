@@ -295,17 +295,11 @@ let config = new class {
         await this.#modificationOption(balise);
         break
       case "filtre":
-        await this.#filtreDesProjets(balise);
+        //pas géré ici mais dans widget.js
+        //await this.#filtreDesProjets(balise);
         break
       default:
     }
-  }
-  /**
-   * 
-   * @param {HTMLElement} balise qui a généré un évènement 
-   */
-  #filtreDesProjets(balise){
-    console.log(balise, balise.id, balise.value, this.optionGantt[4],this.optionGantt[4].col_ref, this[this.tablePrincipale]);
   }
 
   /**
