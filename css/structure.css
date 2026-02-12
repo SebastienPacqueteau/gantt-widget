@@ -34,7 +34,8 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 40px 50px;
+  padding: 20px 20px 10px;
+  gap: 10px;
 }
 
 header {
@@ -49,8 +50,9 @@ header {
 }
 
 main {
-  width: calc(100vw - 100px);
-  height: calc(100vh - 161px);
+  width: calc(100vw - 40px);
+  height: calc(100vh - 134px);
+  min-height: 300px;
   margin: auto;
 }
 
