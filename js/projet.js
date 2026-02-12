@@ -72,10 +72,7 @@ let projets = new class {
       nouvProjet.ajouterCouleurBarre(objLigne, tableCouleurBarre);
       nouvProjet.ajouterTitreBarre(objLigne, tableTitreBarre);
       nouvProjet.ajouterinfoFiltre(objLigne, tableInfoFiltre);
-
-      console.log(nouvProjet);
     }
-    //console.log(this);
   }
 
   async majListeProjets(){

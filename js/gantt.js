@@ -46,9 +46,7 @@ class Gantt{
         listeMois.push(date); 
       }
       return listeMois;
-    })(); 
-    console.log(this);
-    
+    })();     
   }
 
   get width(){ return this._width; }
@@ -114,7 +112,6 @@ class Gantt{
   ajouterLigneColonneG(projet, hauteur, ctx){
     let x = this.margeColonne;
     projet.colonnesG.forEach((objColonne) => {
-      //console.log(objColonne);
       objColonne.contenu.forEach((ligne, i) => {
         ctx.fillText(ligne, x, hauteur + (i * this.hauteurLigne), objColonne.largeur);
       });
@@ -171,7 +168,6 @@ class Gantt{
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     let x = this.margeColonne;
-    //console.log("modification : ligneTitres");
     colonnes.gauche.forEach((colonne, i) => {
       if (colonne.titre.length*10 > Number(colonne.largeur) && colonne.titre.split(" ").length === 2){
         // si on peut faire un saut de ligne : 
@@ -228,7 +224,6 @@ class Gantt{
 
   #colonneDate(){
     const colonneDate = [];
-    //console.log(this.listeMoisAffiches);
     
     this.listeMoisAffiches.forEach((date)=>{
       const mois = date.toLocaleDateString("fr-FR", {month: "long"});

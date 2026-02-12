@@ -23,7 +23,6 @@ grist.ready({
   //configuration
   await config.grist();
   await projets.ajouterLesProjets();
-  //console.log(config);
 
   titreGantt.init();
   gantt.init();
@@ -52,8 +51,8 @@ function redessiner() {
 }
 
 // liste des évènements
-document.getElementById('afficherLesResultats').addEventListener("click", afficherLesResultats);
-document.getElementById('ouvrirConfig').addEventListener("click", basculerPanneauConfiguration);
+//document.getElementById('afficherLesResultats').addEventListener("click", afficherLesResultats);
+//document.getElementById('ouvrirConfig').addEventListener("click", basculerPanneauConfiguration);
 document.getElementById('fermerConfig').addEventListener("click", basculerPanneauConfiguration);
 
 export {redessiner};

@@ -227,13 +227,13 @@ let config = new class {
 
   async optionsPanneau(){
     console.log("CONFIG", await grist.getOptions());
-    /*const options = {
+    /*
+    const options = {
       colonnesG: [],
       colonnesD: [],
       optionGantt: ""
-    };*/
-    //console.log("CONFIG save options", options);
-    //console.log("CONFIG après", await grist.setOptions(options));
+    };
+    */
   }
 
   /*
@@ -283,7 +283,6 @@ let config = new class {
    * @param {HTMLAnchorElement} balise: action sur cet élément 
    */
    async event(balise){
-    //console.log(this, balise);
     switch (balise.dataset.action) {
       case "Ajouter":
         this.#ajouterUneColonne(balise);
@@ -293,10 +292,6 @@ let config = new class {
         break;
       case "changement":
         await this.#modificationOption(balise);
-        break
-      case "filtre":
-        //pas géré ici mais dans widget.js
-        //await this.#filtreDesProjets(balise);
         break
       default:
     }
@@ -354,10 +349,8 @@ let config = new class {
    * @param {number} numLigne 
    */
   #sauvegardeValeursOption(idTableau, numLigne){
-    //console.log(idTableau, numLigne);
     if(numLigne){
       const objLigne = vuePC.valeursLigneTableau(idTableau, numLigne);
-      //console.log(objLigne);
       this.remplacerColOption(idTableau, objLigne, numLigne);
     }
   }
