@@ -15,20 +15,6 @@
           <select class="form-control form-select" id="filtreProjets" required>
           </select>
         </div>
-        Sélection des projets entre :
-        <div class="filtres enColonne">
-          <input type="date" class="form-control" id="dateDebutSelection">
-        </div>
-        et :
-        <div class="filtres enColonne">
-          <input type="date" class="form-control" id="dateFinSelection">
-        </div>
-        <div class="filtres enColonne">
-          <button id="afficherLesResultats" type="button" class="form-control search-button">afficher les résultats</button>
-        </div>
-        <div class="filtres enColonne">
-          <button id="ouvrirConfig" type="button" class="form-control search-button">Panneau config</button>
-        </div>
       </div>
     </header>
     <!-- Panneau configuration  -->
@@ -52,6 +38,10 @@
             </tr>
           </thead>
           <tbody id="affichage">
+            <tr>
+              <td>Nombre de mois à afficher</td>
+              <td><input type="number" name="" id=""></td>
+            </tr>
           </tbody>
         </table>
       </div> 
